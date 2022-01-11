@@ -1,0 +1,440 @@
+
+<!--[if IE]><script type="text/javascript" src="/sites/default/files/1010/source/excanvas.js"></script><![endif]-->
+
+<!-- Code adapted from: http://tech.pro/tutorial/1008/creating-a-roulette-wheel-using-html5-canvas -->
+
+<!--<input type="button" value="spin" onclick="spin();" style="float: left;" />-->
+<html>
+    <style>
+        td,table{
+            border:5px solid black;
+            background-color:white;
+        }
+        table{
+            margin-left:700px;
+           position:relative;
+           bottom:600px;
+        }
+        #money{
+            position:relative;
+            left:700px;
+            bottom:540px;
+        }
+        #bet{
+            position:relative;
+            left:700px;
+            bottom:560px;
+        }
+        #profit{
+            position:relative;
+            left:700px;
+            bottom:520px;
+        }
+        button{
+            height:70px;
+            width:70px;
+            border-radius:999em;
+            border:5px solid red;
+            position:relative;
+            bottom:200px;
+        }
+    </style>
+<body style="background-color: rgba(103, 64, 124, 0.85)" onload=" draw();">
+
+
+<canvas id="wheelcanvas" width="700" height="700"></canvas> 
+
+<script type="application/javascript">  
+
+var profit=0;//總收益
+var i1=1;
+var bet=0;//賭的金額
+var total = 1000 ;//預算
+var click = 0 ;
+var text;
+var r = 200;
+var x=250,y=250;
+var Colors=new Array("red","blue","yellow","white","cyan","gray");
+var number;
+var m2 = 0;
+var Color = "white";
+
+  var startAngle = 0;
+  var arc = Math.PI / 8;
+  var spinTimeout = null;
+  var spinsize = 320;
+  
+  var spinArcStart = 10;
+  var spinTime = 0;
+  var spinTimeTotal = 0;
+  
+  var ctx;
+  
+  //document.onclick = spin;
+  window.addEventListener("keydown", checkKeyPressed, false);
+ 
+  
+  
+  function draw() {
+    drawRouletteWheel();
+  }
+  
+  function isEven(n) {
+     return (n % 2 == 0);
+  }
+
+  function isOdd(n) {
+     return (Math.abs(n) % 2 == 1);
+  }
+  
+  function getText(i) {
+    var text;
+    if (i%2==0)
+      text = (i).toString();
+    else if (i%2==1)
+      text = (i).toString();
+    return text;
+  }
+
+  function drawRouletteWheel() {//畫輪盤
+    var canvas = document.getElementById("wheelcanvas");
+    if (canvas.getContext) {
+      var outsideRadius = 300 
+      var textRadius = 240 
+      var insideRadius = 200 
+      
+      ctx = canvas.getContext("2d");
+      ctx.clearRect(0,0,1000,1000); 
+      
+      
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      
+      ctx.font = 'bold 42px Avenir Next, sans-serif';
+      
+      for(var i = 1; i <= 16; i++) {//畫16個數字，要改幾格數字改這就行了，但有時要注意大小夠不夠畫
+        var angle = startAngle + i * arc;
+        if (i%2==0)
+          ctx.fillStyle = "red";//輪盤底為紅黑
+        else if (i%2==1)
+          ctx.fillStyle = "black";//輪盤底為紅黑
+        
+        ctx.beginPath();
+        ctx.arc(spinsize, spinsize, outsideRadius, angle, angle + arc, false);
+        ctx.arc(spinsize, spinsize, insideRadius, angle + arc, angle, true);
+        ctx.stroke();
+        ctx.fill();
+        ctx.save();
+
+        if (i%2==0)//填數字到輪盤
+          ctx.fillStyle = "black";
+        else if (i%2==1)
+          ctx.fillStyle = "white";
+        ctx.translate(spinsize + Math.cos(angle + arc / 2) * textRadius, spinsize + Math.sin(angle + arc / 2) * textRadius);
+        ctx.rotate(angle + arc / 2 + Math.PI / 2);
+        text = getText(i)//text為轉到的那個數字
+        ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+        ctx.restore();
+      } 
+      
+      //Arrow============
+      ctx.fillStyle = "gold";
+      ctx.beginPath();
+      ctx.moveTo(spinsize - 8, spinsize - (outsideRadius + 10));
+      ctx.lineTo(spinsize + 8, spinsize - (outsideRadius + 10));
+      ctx.lineTo(spinsize + 8, spinsize - (outsideRadius - 10));
+      ctx.lineTo(spinsize + 18, spinsize - (outsideRadius - 10));
+      ctx.lineTo(spinsize + 0, spinsize - (outsideRadius - 26));
+      ctx.lineTo(spinsize - 18, spinsize - (outsideRadius - 10));
+      ctx.lineTo(spinsize - 8, spinsize - (outsideRadius - 10));
+      ctx.lineTo(spinsize - 8, spinsize - (outsideRadius + 10));
+      ctx.fill();
+    }
+  }
+  
+  function spin() {
+    spinAngleStart = Math.random() * 10 + 10;
+    spinTime = 0;
+    spinTimeTotal = Math.random() * 3 + 4 * 1618;
+    rotateWheel();
+  }
+  
+  function rotateWheel() {
+    spinTime += 30;
+    if(spinTime >= spinTimeTotal) {
+      stopRotateWheel();
+      return ;
+    }
+    var spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+    startAngle += (spinAngle * Math.PI / 180);
+    drawRouletteWheel();
+    spinTimeout = setTimeout('rotateWheel()', 30);
+  }
+  
+  function stopRotateWheel() {
+    clearTimeout(spinTimeout);
+    var degrees = startAngle * 180 / Math.PI + 90;
+    var arcd = arc * 180 / Math.PI;
+    var index = Math.floor((360 - degrees % 360) / arcd);
+    ctx.save();
+
+    if (isEven(index)) {
+      ctx.fillStyle = "black";
+      ctx.shadowColor   = "white";
+    }
+    else if (isOdd(index)) {
+      ctx.fillStyle = "red";
+      ctx.shadowColor   = "white";
+    }
+    ctx.font = 'bold 150px sans-serif';
+    ctx.shadowOffsetX = -2;
+    ctx.shadowOffsetY = -2;
+    ctx.shadowBlur    = 1;
+
+    number=index;
+    text = getText(index);
+    ctx.fillText(text, spinsize - ctx.measureText(text).width / 2, spinsize + 20);
+    ctx.restore();
+    checkwin();//檢查有沒有中
+    clean();//清空表格所有顏色和錢
+  }
+  
+  function easeOut(t, b, c, d) {
+    var ts = (t/=d)*t;
+    var tc = ts*t;
+    return b+c*(tc + -3*ts + 3*t);
+  }
+  
+  function checkwin()
+{
+   
+	for (var i = 1 ; i <= 16 ; i++)
+	{
+		if (document.getElementById(i).className == "in")//如果那格點擊過他的classname會是in
+		{
+			if (document.getElementById(i).innerHTML == number){//number是轉到的數字
+                total = total + m2*16/click ;//單格為16倍除以你點幾格
+                profit+=m2*16/click;
+            }
+            
+        }		
+	}
+        if(document.getElementById("mod_1").className=="in"){//如果那格點擊過他的classname會是in
+            var obj = document.getElementById("mod_1");//以下為檢查你是否有壓餘數為1和你壓多少
+            if(number%4==1 && obj.style.backgroundColor=="red"){//red為10元
+                total+=10*4;
+                profit+=10*4;
+            }
+            else if(number%4==1 && obj.style.backgroundColor=="green"){//green=20元
+                total+=20*4;
+                profit+=20*4;
+            }
+            else if(number%4==1 && obj.style.backgroundColor=="yellow"){//yellow為50元
+                total+=50*4;
+                profit+=50*4;
+            }
+        }
+        if(document.getElementById("mod_2").className=="in"){//如果那格點擊過他的classname會是in
+            var obj = document.getElementById("mod_2");//以下為檢查你是否有壓餘數為2和你壓多少
+            if(number%4==2 && obj.style.backgroundColor=="red"){//red為10元
+                total+=10*4;
+                profit+=10*4;
+            }
+            else if(number%4==2 && obj.style.backgroundColor=="green"){//green=20元
+                total+=20*4;
+                profit+=20*4;
+            }
+            else if(number%4==2 && obj.style.backgroundColor=="yellow"){//yellow為50元
+                total+=50*4;
+                profit+=50*4;
+            }
+        }
+        if(document.getElementById("mod_3").className=="in"){//如果那格點擊過他的classname會是in
+            var obj = document.getElementById("mod_3");//以下為檢查你是否有壓餘數為3和你壓多少
+            if(number%4==3 && obj.style.backgroundColor=="red"){
+                total+=10*4;
+                profit+=10*4;
+            }
+            else if(number%4==3 && obj.style.backgroundColor=="green"){
+                total+=20*4;
+                profit+=20*4;
+            }
+            else if(number%4==3 && obj.style.backgroundColor=="yellow"){
+                total+=50*4;
+                profit+=50*4;
+            }
+        }
+        if(document.getElementById("mod_0").className=="in"){//如果那格點擊過他的classname會是in
+            var obj = document.getElementById("mod_0");//以下為檢查你是否有壓餘數為0和你壓多少
+            if(number%4==0 && obj.style.backgroundColor=="red"){
+                total+=10*4;
+                profit+=10*4;
+            }
+            else if(number%4==0 && obj.style.backgroundColor=="green"){
+                total+=20*4;
+                profit+=20*4;
+            }
+            else if(number%4==0 && obj.style.backgroundColor=="yellow"){
+                total+=50*4;
+                profit+=50*4;
+            }
+        }
+	document.getElementById("money").innerHTML = "you have " + total + " money left." ;
+    if(profit>=0){
+        document.getElementById("profit").innerHTML = "總損益 : +" + profit  //輸出你的總收益，阿正的前面就多一個+號
+    }
+    else{
+        document.getElementById("profit").innerHTML = "總損益 : "+profit;
+    }
+}
+
+
+
+  function putmoney(obj)//點擊籌碼和表格後要計算壓多少
+{
+	if (obj.className != "in" )//不等於in表示這格沒點過
+	{
+		obj.style.background = Color ;
+		obj.className = "in" ;
+		click += 1 ;
+		total-=m2;
+        profit-=m2;
+        bet+=m2;
+		
+		document.getElementById("money").innerHTML ="you have " + total + " money left." ;
+		document.getElementById("bet").innerHTML="you bet : " +bet+ " dollars";
+	}
+	else
+	{//點過你又再點一次就把它變回來
+		obj.style.background = "white" ;
+		obj.className = "" ;
+		total+=m2;
+        profit+=m2;
+        bet-=m2;
+		click -= 1 ;
+		document.getElementById("money").innerHTML ="you have " + total + " money left." ;
+        document.getElementById("bet").innerHTML="you bet : " +bet+ " dollars";
+	}
+}
+
+function SE(a,obj)//點籌碼時確認你點多少的籌碼
+{
+	
+	m2=a;
+	if(a==10){//10就把底色變red
+	if (obj.className != "in")//如果那格點擊過他的classname會是in
+	{
+		Color = "red" ;
+		obj.style.background = "red" ;
+		obj.className = "in" ;
+
+
+	}
+	else
+	{
+		obj.style.background = "white" ;
+		obj.className = "" ;
+
+	}	
+	}
+	if(a==20)
+	{	//20就把底色變green
+		Color = "green" ;
+		if (obj.className != "in")//如果那格點擊過他的classname會是in
+		{
+			obj.style.background = "green" ;
+			obj.className = "in" ;
+
+		}
+		else
+		{
+			obj.style.background = "white" ;
+			obj.className = "" ;
+
+		}	
+	}
+	if(a==50)
+	{	//50就把底色變yellow
+		Color = "yellow" ;
+		if (obj.className != "in")//如果那格點擊過他的classname會是in
+		{
+			obj.style.background = "yellow" ;
+			obj.className = "in" ;
+
+		}
+		else
+		{
+			obj.style.background = "white" ;
+			obj.className = "" ;
+
+			
+		}	
+	}
+	
+}
+function clean(){//全部清空
+    for(i=1;i<=16;i++){
+        document.getElementById(i).style.background="white";
+    }
+    for(i=1;i<=16;i++){
+        document.getElementById(i).className="n";
+    }
+    //=====================把全部classname改回n===================
+    document.getElementById("mod_0").className="n";
+    document.getElementById("mod_1").className="n";
+    document.getElementById("mod_2").className="n";
+    document.getElementById("mod_3").className="n";
+    document.getElementById("mod_0").style.background="white";
+    document.getElementById("mod_1").style.background="white";
+    document.getElementById("mod_2").style.background="white";
+    document.getElementById("mod_3").style.background="white";
+    document.getElementById("a").style.background="white";
+    document.getElementById("b").style.background="white";
+    document.getElementById("c").style.background="white";
+    document.getElementById('bet').innerHTML="you bet : 0 dollars.";
+    bet=0;//下注金額歸零
+    profit=0;
+}
+</script>
+<button onclick="spin()">start</button>
+    <table>
+    <tr>
+        <td id=a  class="n" onclick="SE(10,this)"colspan=2>10</td>
+        <td id=b  class="n" onclick="SE(20,this)"colspan=2>20</td>
+        <td id=c  class="n" onclick="SE(50,this)"colspan=2>50</td>
+    </tr>
+    <tr>
+        <td id=1 class="n" onclick="putmoney(this)">1</td>
+        <td id=5 class="n" onclick="putmoney(this)">5</td>
+        <td id=9 class="n" onclick="putmoney(this)">9</td>
+        <td id=13 class="n" onclick="putmoney(this)">13</td>
+        <td id="mod_1" class="n" onclick="putmoney(this)">押餘數為1</td>
+    </tr>
+    <tr>
+        <td id=2 class="n" onclick="putmoney(this)">2</td>
+        <td id=6 class="n" onclick="putmoney(this)">6</td>
+        <td id=10 class="n" onclick="putmoney(this)">10</td>
+        <td id=14 class="n" onclick="putmoney(this)">14</td>
+        <td id="mod_2" class="n" onclick="putmoney(this)">押餘數為2</td>
+    </tr>
+    <tr>
+        <td id=3 class="n" onclick="putmoney(this)">3</td>
+        <td id=7 class="n" onclick="putmoney(this)">7</td>
+        <td id=11 class="n" onclick="putmoney(this)">11</td>
+        <td id=15 class="n" onclick="putmoney(this)">15</td>
+        <td id="mod_3" class="n" onclick="putmoney(this)">押餘數為3</td>
+    </tr>
+    <tr>
+        <td id=4 class="n" onclick="putmoney(this)">4</td>
+        <td id=8 class="n" onclick="putmoney(this)">8</td>
+        <td id=12 class="n" onclick="putmoney(this)">12</td>
+        <td id=16 class="n" onclick="putmoney(this)">16</td>
+        <td id="mod_0" class="n" onclick="putmoney(this)">押餘數為0</td>
+    </tr>
+</table>
+<div id="bet" style="background-color:white;height:20px;width:200px;">you bet : 0 dollars.</div>
+<div id="money" style="background-color:white;height:20px;width:200px;">you have 1000 money left.</div>
+<div id="profit" style="background-color:white;height:20px;width:200px;">總損益 : </div>
+
+</body>
+</html>
